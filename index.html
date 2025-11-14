@@ -17,10 +17,10 @@
 
         .project-frame {
             background: white;
-            padding: 20px 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-            max-width: 900px;
+            padding: 30px 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            max-width: 1000px;
             width: 100%;
             text-align: center;
         }
@@ -32,13 +32,13 @@
 
         .project-frame h1 {
             margin: 5px 0;
-            font-size: 28px;
+            font-size: 32px;
             color: #2a5298;
         }
 
         .project-frame h2 {
             margin: 5px 0;
-            font-size: 20px;
+            font-size: 22px;
             color: #555;
         }
 
@@ -50,8 +50,8 @@
 
         #map {
             width: 100%;
-            height: 500px;
-            margin-top: 15px;
+            height: 550px;
+            margin-top: 20px;
             border-radius: 10px;
         }
 
@@ -95,6 +95,7 @@
 <script>
     const map = L.map('map', { zoomControl: true }).setView([45.5, 12.3], 11);
 
+    // Fond Leaflet (toujours visible)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'
     }).addTo(map);
@@ -109,7 +110,8 @@
     const tileHeight = latDiff / 3;
     const tileWidth = lngDiff / 4;
 
-    let loadedCount = 0;
+    // Tableau pour stocker les tuiles Landsat
+    let landsatTiles = [];
 
     // Charger les 12 tuiles et les coller sans espace
     for (let row = 0; row < 3; row++) {
@@ -124,24 +126,26 @@
 
             const imageUrl = `${tileNumber}.png`;
 
-            L.imageOverlay(imageUrl, tileBounds, { opacity: 1 }).addTo(map);
+            const tile = L.imageOverlay(imageUrl, tileBounds, { opacity: 1 }).addTo(map);
+            landsatTiles.push(tile);
         }
     }
 
     map.fitBounds(bounds);
 
-    // Cadre rouge
+    // Cadre rouge autour de la zone
     L.rectangle(bounds, { color: '#e74c3c', weight: 2, fillOpacity: 0 }).addTo(map);
     L.control.scale().addTo(map);
 
-    // Boutons masquer/afficher
-    const mapDiv = document.getElementById('map');
+    // Boutons masquer / afficher seulement les tuiles Landsat
     document.getElementById('hideBtn').addEventListener('click', () => {
-        mapDiv.style.display = 'none';
+        landsatTiles.forEach(t => map.removeLayer(t));
     });
+
     document.getElementById('showBtn').addEventListener('click', () => {
-        mapDiv.style.display = 'block';
-        map.invalidateSize(); // pour redimensionner Leaflet correctement
+        landsatTiles.forEach(t => {
+            if (!map.hasLayer(t)) map.addLayer(t);
+        });
     });
 </script>
 

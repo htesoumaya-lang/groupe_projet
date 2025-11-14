@@ -1,94 +1,149 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Landsat Multispectral</title>
+    <title>Projet Web Mapping</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { margin: 0; padding: 0; height: 100vh; font-family: Arial; background: #1a2a40; }
-        #map { width: 100%; height: 100vh; }
-        .header {
-            position: absolute; top: 20px; left: 20px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        body {
+            margin: 0; padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .project-frame {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .project-frame img.logo {
+            width: 120px;
+            margin-bottom: 15px;
+        }
+
+        .project-frame h1 {
+            margin: 5px 0;
+            font-size: 28px;
+            color: #2a5298;
+        }
+
+        .project-frame h2 {
+            margin: 5px 0;
+            font-size: 20px;
+            color: #555;
+        }
+
+        .project-frame h3 {
+            margin: 5px 0;
+            font-size: 16px;
+            color: #777;
+        }
+
+        #map {
+            width: 100%;
+            height: 500px;
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+
+        .btn-container {
+            margin-top: 15px;
+        }
+
+        .btn-container button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            color: white;
+            background-color: #2a5298;
+            transition: background 0.3s;
+        }
+
+        .btn-container button:hover {
+            background-color: #1c3970;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h2 style="margin:0; color: #2a5298;">🛰️ Landsat Multispectral</h2>
-        <p style="margin:5px 0 0 0; color: #666; font-size: 13px;">Italie du Nord - Visualisation 12 tuiles</p>
+
+<div class="project-frame">
+    <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/5/54/Logo_iav.png" alt="Logo IAV">
+    <h1>Projet Web Mapping</h1>
+    <h2>Encadré par Pr. Hajji</h2>
+    <h3>Filière Sciences Géomatique et Ingénierie Topographique - 3ème année CI</h3>
+
+    <div class="btn-container">
+        <button id="hideBtn">Masquer l'image</button>
+        <button id="showBtn">Visualiser l'image</button>
     </div>
+
     <div id="map"></div>
+</div>
 
-    <script>
-        // Initialisation carte
-        const map = L.map('map').setView([45.5, 12.3], 11);
-        
-        // Fond OSM
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap'
-        }).addTo(map);
+<script>
+    const map = L.map('map', { zoomControl: true }).setView([45.5, 12.3], 11);
 
-        // Coordonnées Landsat
-        const bounds = [
-            [45.5859332, 12.1699431],
-            [45.4005451, 12.4736074]
-        ];
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-        // Calcul dimensions tuiles
-        const latDiff = bounds[0][0] - bounds[1][0];
-        const lngDiff = bounds[1][1] - bounds[0][1];
-        const tileHeight = latDiff / 3;
-        const tileWidth = lngDiff / 4;
+    const bounds = [
+        [45.5859332, 12.1699431],
+        [45.4005451, 12.4736074]
+    ];
 
-        let loadedCount = 0;
+    const latDiff = bounds[0][0] - bounds[1][0];
+    const lngDiff = bounds[1][1] - bounds[0][1];
+    const tileHeight = latDiff / 3;
+    const tileWidth = lngDiff / 4;
 
-        // Charger les 12 tuiles
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 4; col++) {
-                const north = bounds[0][0] - (row * tileHeight);
-                const south = bounds[0][0] - ((row + 1) * tileHeight);
-                const west = bounds[0][1] + (col * tileWidth);
-                const east = bounds[0][1] + ((col + 1) * tileWidth);
-                
-                const tileBounds = [[north, west], [south, east]];
-                const tileNumber = (row * 4) + col + 1;
-                
-                // CHEMIN CORRECT pour fichiers à la racine
-                const imageUrl = `${tileNumber}.png`;
-                
-                const tile = L.imageOverlay(imageUrl, tileBounds, {
-                    opacity: 0.9
-                }).addTo(map);
-                
-                tile.on('load', function() {
-                    loadedCount++;
-                    console.log(`✅ Tuile ${tileNumber} chargée`);
-                    if (loadedCount === 12) {
-                        console.log('🎉 TOUTES les tuiles sont chargées !');
-                    }
-                });
-                
-                tile.on('error', function() {
-                    console.log(`❌ Erreur tuile ${tileNumber}`);
-                });
-            }
+    let loadedCount = 0;
+
+    // Charger les 12 tuiles et les coller sans espace
+    for (let row = 0; row < 3; row++) {
+        for (let col = 0; col < 4; col++) {
+            const north = bounds[0][0] - (row * tileHeight);
+            const south = bounds[0][0] - ((row + 1) * tileHeight);
+            const west = bounds[0][1] + (col * tileWidth);
+            const east = bounds[0][1] + ((col + 1) * tileWidth);
+
+            const tileBounds = [[north, west], [south, east]];
+            const tileNumber = (row * 4) + col + 1;
+
+            const imageUrl = `${tileNumber}.png`;
+
+            L.imageOverlay(imageUrl, tileBounds, { opacity: 1 }).addTo(map);
         }
+    }
 
-        // Centrer la carte
-        map.fitBounds(bounds);
-        
-        // Cadre de repère
-        L.rectangle(bounds, {
-            color: '#e74c3c',
-            weight: 2,
-            fillOpacity: 0
-        }).addTo(map);
+    map.fitBounds(bounds);
 
-        // Contrôles
-        L.control.scale().addTo(map);
+    // Cadre rouge
+    L.rectangle(bounds, { color: '#e74c3c', weight: 2, fillOpacity: 0 }).addTo(map);
+    L.control.scale().addTo(map);
 
-    </script>
+    // Boutons masquer/afficher
+    const mapDiv = document.getElementById('map');
+    document.getElementById('hideBtn').addEventListener('click', () => {
+        mapDiv.style.display = 'none';
+    });
+    document.getElementById('showBtn').addEventListener('click', () => {
+        mapDiv.style.display = 'block';
+        map.invalidateSize(); // pour redimensionner Leaflet correctement
+    });
+</script>
+
 </body>
 </html>

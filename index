@@ -1,72 +1,93 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Landsat Images</title>
+    <title>Landsat Multispectral</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        body { margin: 0; padding: 0; height: 100vh; font-family: Arial; background: #2c3e50; }
+        body { margin: 0; padding: 0; height: 100vh; font-family: Arial; background: #1a2a40; }
         #map { width: 100%; height: 100vh; }
-        .debug {
-            position: absolute; top: 10px; left: 10px; z-index: 1000;
-            background: white; padding: 15px; border-radius: 8px; max-width: 500px;
+        .header {
+            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            background: white; padding: 15px; border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         }
     </style>
 </head>
 <body>
-    <div id="map"></div>
-    <div class="debug" id="debug">
-        <h3 style="margin:0 0 10px 0;">🔍 Diagnostic</h3>
-        <div id="status">Test en cours...</div>
+    <div class="header">
+        <h2 style="margin:0; color: #2a5298;">🛰️ Landsat Multispectral</h2>
+        <p style="margin:5px 0 0 0; color: #666; font-size: 13px;">Italie du Nord - Visualisation 12 tuiles</p>
     </div>
+    <div id="map"></div>
 
     <script>
-        const map = L.map('map').setView([45.5, 12.3], 10);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        // Initialisation carte
+        const map = L.map('map').setView([45.5, 12.3], 11);
+        
+        // Fond OSM
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
 
-        const debug = document.getElementById('debug');
-        const status = document.getElementById('status');
+        // Coordonnées Landsat
+        const bounds = [
+            [45.5859332, 12.1699431],
+            [45.4005451, 12.4736074]
+        ];
 
-        // Test chaque image individuellement
-        const bounds = [[45.58, 12.17], [45.40, 12.47]];
-        let testsCompleted = 0;
-        let imagesFound = 0;
+        // Calcul dimensions tuiles
+        const latDiff = bounds[0][0] - bounds[1][0];
+        const lngDiff = bounds[1][1] - bounds[0][1];
+        const tileHeight = latDiff / 3;
+        const tileWidth = lngDiff / 4;
 
-        function testImage(number) {
-            const img = new Image();
-            const url = `${number}.png`;
-            
-            img.onload = function() {
-                imagesFound++;
-                status.innerHTML += `<br>✅ <a href="${url}" target="_blank">${url}</a> - TROUVÉ`;
+        let loadedCount = 0;
+
+        // Charger les 12 tuiles
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 4; col++) {
+                const north = bounds[0][0] - (row * tileHeight);
+                const south = bounds[0][0] - ((row + 1) * tileHeight);
+                const west = bounds[0][1] + (col * tileWidth);
+                const east = bounds[0][1] + ((col + 1) * tileWidth);
                 
-                // Ajouter à la carte
-                L.imageOverlay(url, [
-                    [45.58 - ((number-1)%3)*0.06, 12.17 + Math.floor((number-1)/3)*0.07],
-                    [45.58 - ((number-1)%3 + 1)*0.06, 12.17 + (Math.floor((number-1)/3) + 1)*0.07]
-                ]).addTo(map);
-            };
-            
-            img.onerror = function() {
-                status.innerHTML += `<br>❌ <a href="${url}" target="_blank">${url}</a> - NON TROUVÉ`;
-            };
-            
-            img.src = url;
-        }
-
-        // Tester les 12 images
-        status.innerHTML = "Test des images sur GitHub...<br>";
-        for (let i = 1; i <= 12; i++) {
-            testImage(i);
-        }
-
-        // Résumé après 3 secondes
-        setTimeout(() => {
-            status.innerHTML += `<br><br><b>RÉSULTAT : ${imagesFound}/12 images trouvées</b>`;
-            if (imagesFound === 0) {
-                status.innerHTML += `<br><br>❌ <b>URGENT : Uploader les images sur GitHub !</b>`;
+                const tileBounds = [[north, west], [south, east]];
+                const tileNumber = (row * 4) + col + 1;
+                
+                // CHEMIN SIMPLE - images à la racine
+                const imageUrl = `${tileNumber}.png`;
+                
+                const tile = L.imageOverlay(imageUrl, tileBounds, {
+                    opacity: 0.9
+                }).addTo(map);
+                
+                tile.on('load', function() {
+                    loadedCount++;
+                    console.log(`✅ Tuile ${tileNumber} chargée`);
+                    if (loadedCount === 12) {
+                        console.log('🎉 TOUTES les tuiles sont chargées !');
+                    }
+                });
+                
+                tile.on('error', function() {
+                    console.log(`❌ Erreur tuile ${tileNumber}`);
+                });
             }
-        }, 3000);
+        }
+
+        // Centrer la carte
+        map.fitBounds(bounds);
+        
+        // Cadre de repère
+        L.rectangle(bounds, {
+            color: '#e74c3c',
+            weight: 2,
+            fillOpacity: 0
+        }).addTo(map);
+
+        // Contrôles
+        L.control.scale().addTo(map);
 
     </script>
 </body>

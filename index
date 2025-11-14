@@ -55,7 +55,7 @@
                 const tileBounds = [[north, west], [south, east]];
                 const tileNumber = (row * 4) + col + 1;
                 
-                // CHEMIN SIMPLE - images à la racine
+                // CHEMIN CORRECT pour fichiers à la racine
                 const imageUrl = `${tileNumber}.png`;
                 
                 const tile = L.imageOverlay(imageUrl, tileBounds, {
